@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.labelTopping = new System.Windows.Forms.Label();
             this.labelFlavor = new System.Windows.Forms.Label();
             this.labelFilling = new System.Windows.Forms.Label();
@@ -35,7 +36,9 @@
             this.labelToppingVal = new System.Windows.Forms.Label();
             this.labelFlavorVal = new System.Windows.Forms.Label();
             this.labelFillingVal = new System.Windows.Forms.Label();
-            this.labelNewPie = new System.Windows.Forms.Label();
+            this.conveyerTimer = new System.Windows.Forms.Timer(this.components);
+            this.JoeRobotWorker = new System.ComponentModel.BackgroundWorker();
+            this.LucyRobotWorker = new System.ComponentModel.BackgroundWorker();
             this.SuspendLayout();
             // 
             // labelTopping
@@ -94,7 +97,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.labelFlavorVal.Location = new System.Drawing.Point(65, 26);
             this.labelFlavorVal.Name = "labelFlavorVal";
-            this.labelFlavorVal.Size = new System.Drawing.Size(240, 13);
+            this.labelFlavorVal.Size = new System.Drawing.Size(221, 13);
             this.labelFlavorVal.TabIndex = 5;
             this.labelFlavorVal.Text = "label";
             this.labelFlavorVal.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -102,28 +105,32 @@
             // labelFillingVal
             // 
             this.labelFillingVal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.labelFillingVal.Location = new System.Drawing.Point(311, 22);
+            this.labelFillingVal.Location = new System.Drawing.Point(304, 22);
             this.labelFillingVal.Name = "labelFillingVal";
-            this.labelFillingVal.Size = new System.Drawing.Size(30, 17);
+            this.labelFillingVal.Size = new System.Drawing.Size(37, 17);
             this.labelFillingVal.TabIndex = 6;
             this.labelFillingVal.Text = "label";
             this.labelFillingVal.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
-            // labelNewPie
+            // conveyerTimer
             // 
-            this.labelNewPie.AutoSize = true;
-            this.labelNewPie.Location = new System.Drawing.Point(306, 84);
-            this.labelNewPie.Name = "labelNewPie";
-            this.labelNewPie.Size = new System.Drawing.Size(35, 13);
-            this.labelNewPie.TabIndex = 7;
-            this.labelNewPie.Text = "label1";
+            this.conveyerTimer.Enabled = true;
+            this.conveyerTimer.Interval = 1000;
+            this.conveyerTimer.Tick += new System.EventHandler(this.conveyerTimer_Tick);
+            // 
+            // JoeRobotWorker
+            // 
+            this.JoeRobotWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.JoeRobotWorker_DoWork);
+            // 
+            // LucyRobotWorker
+            // 
+            this.LucyRobotWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.LucyRobotWorker_DoWork);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(353, 304);
-            this.Controls.Add(this.labelNewPie);
             this.Controls.Add(this.labelFillingVal);
             this.Controls.Add(this.labelFlavorVal);
             this.Controls.Add(this.labelToppingVal);
@@ -147,7 +154,9 @@
         private System.Windows.Forms.Label labelToppingVal;
         private System.Windows.Forms.Label labelFlavorVal;
         private System.Windows.Forms.Label labelFillingVal;
-        private System.Windows.Forms.Label labelNewPie;
+        private System.Windows.Forms.Timer conveyerTimer;
+        private System.ComponentModel.BackgroundWorker JoeRobotWorker;
+        private System.ComponentModel.BackgroundWorker LucyRobotWorker;
     }
 }
 
