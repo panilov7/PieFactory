@@ -25,8 +25,8 @@ namespace PieFactory
         private Stack<Pie> pieStack = new Stack<Pie>();
         private Object pieStackLock = new Object();
 
-        AutoResetEvent lucyWaitHandle = new AutoResetEvent(false);
-        AutoResetEvent conveyerWaitHandle = new AutoResetEvent(false);
+        AutoResetEvent lucyPieWaitHandle = new AutoResetEvent(false);
+        AutoResetEvent lucyIngrWaitHandle = new AutoResetEvent(false);
 
         public Form1()
         {
@@ -42,7 +42,7 @@ namespace PieFactory
             {
                 pieStack.Push(new Pie());
             }
-            lucyWaitHandle.Set();
+            lucyPieWaitHandle.Set();
             listBoxOutLog.Items.Add("added a pie");
         }
 
@@ -50,25 +50,66 @@ namespace PieFactory
         {
             while (true) {
                 updateValues();
-                lucyWaitHandle.WaitOne();
+                lucyPieWaitHandle.WaitOne();
                 Pie pie;
                 lock (pieStackLock) {
                     pie = pieStack.Peek();
                 }
                 if (!pie.IsDone) {
+                    bool isWaiting = false;
                     addTextToListBox("adding ingrediants..");
                     lock (fillingLock) {
-                        filling -= 250;
+                        if (filling <= 0)
+                        {
+                            filling = 0;
+                            conveyerTimer.Stop();
+                            isWaiting = true;
+                        }
+                        else
+                        {
+                            filling -= 250;
+                            System.Threading.Thread.Sleep(100);
+                            addTextToListBox("added filling");
+                        }
+                    }
+                    if (isWaiting) {
+                        lucyIngrWaitHandle.WaitOne();
+                        isWaiting = false;
                     }
                     lock (flavorLock)
+                    {   
+                        if (flavor <= 0) {
+                            flavor = 0;
+                            conveyerTimer.Stop();
+                            isWaiting = true;
+                        } else {
+                            flavor -= 10;
+                            System.Threading.Thread.Sleep(100);
+                            addTextToListBox("added flavor");
+                        }
+                    }
+                    if (isWaiting)
                     {
-                        flavor -= 10;
+                        lucyIngrWaitHandle.WaitOne();
+                        isWaiting = false;
                     }
                     lock (toppingLock)
                     {
-                        topping -= 100;
+                        if (topping <= 0) {
+                            topping = 0;
+                            conveyerTimer.Stop();
+                            isWaiting = true;
+                        } else {
+                            topping -= 100;
+                            System.Threading.Thread.Sleep(100);
+                            addTextToListBox("added toping");
+                        }
                     }
-
+                    if (isWaiting)
+                    {
+                        lucyIngrWaitHandle.WaitOne();
+                        isWaiting = false;
+                    }
                     pie.IsDone = true;
                 }
             }
@@ -97,9 +138,12 @@ namespace PieFactory
 
         private void JoeRobotWorker_DoWork(object sender, DoWorkEventArgs e)
         {
-            //while (true) {
-
-            //}
+            while (true) {
+                System.Threading.Thread.Sleep(10000);
+                filling = 2000;
+                conveyerTimer.Start();
+                lucyIngrWaitHandle.Set();
+            }
         }
     }
 }
