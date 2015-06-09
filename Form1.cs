@@ -13,13 +13,10 @@ namespace PieFactory
 {
     public partial class Form1 : Form
     {
+
         private int filling = 2000; // in grams
         private int flavor = 2000;
         private int topping = 2000;
-        private int pieNum = 0;
-        private bool shouldStop = false;
-
-        private System.Threading.Timer conveyerTimer; 
 
         private Object fillingLock = new Object();
         private Object flavorLock = new Object();
@@ -28,215 +25,125 @@ namespace PieFactory
         private Stack<Pie> pieStack = new Stack<Pie>();
         private Object pieStackLock = new Object();
 
-        private AutoResetEvent lucyPieWaitHandle = new AutoResetEvent(false);
-        private AutoResetEvent lucyIngrWaitHandle = new AutoResetEvent(false);
-        private ManualResetEvent conveyerTimerStopHandle = new ManualResetEvent(false);
+        AutoResetEvent lucyPieWaitHandle = new AutoResetEvent(false);
+        AutoResetEvent lucyIngrWaitHandle = new AutoResetEvent(false);
 
         public Form1()
         {
             InitializeComponent();
+            LucyRobotWorker.RunWorkerAsync();
+            JoeRobotWorker.RunWorkerAsync();
         }
 
-        private void conveyerTimer_Tick(object StateObj)
+        private void conveyerTimer_Tick(object sender, EventArgs e)
         {
-            conveyerTimerStopHandle.WaitOne();
             updateValues();
-            Pie pie = new Pie(pieNum++);
             lock (pieStackLock)
             {
-                pieStack.Push(pie);
+                pieStack.Push(new Pie());
             }
             lucyPieWaitHandle.Set();
-            addTextToListBox("added a pie: " + pie.num);
+            listBoxOutLog.Items.Add("added a pie");
         }
 
-        private void LucyRobotWorker_DoWork()
+        private void LucyRobotWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             while (true) {
                 updateValues();
                 lucyPieWaitHandle.WaitOne();
-                if (shouldStop)
-                {
-                    break;
+                Pie pie;
+                lock (pieStackLock) {
+                    pie = pieStack.Peek();
                 }
-                else {
-                    Pie pie;
-                    lock (pieStackLock) {
-                        pie = pieStack.Peek();
+                if (!pie.IsDone) {
+                    bool isWaiting = false;
+                    addTextToListBox("adding ingrediants..");
+                    lock (fillingLock) {
+                        if (filling <= 0)
+                        {
+                            filling = 0;
+                            conveyerTimer.Stop();
+                            isWaiting = true;
+                        }
+                        else
+                        {
+                            filling -= 250;
+                            System.Threading.Thread.Sleep(100);
+                            addTextToListBox("added filling");
+                        }
                     }
-                    if (!pie.isDone)
+                    if (isWaiting) {
+                        lucyIngrWaitHandle.WaitOne();
+                        isWaiting = false;
+                    }
+                    lock (flavorLock)
+                    {   
+                        if (flavor <= 0) {
+                            flavor = 0;
+                            conveyerTimer.Stop();
+                            isWaiting = true;
+                        } else {
+                            flavor -= 10;
+                            System.Threading.Thread.Sleep(100);
+                            addTextToListBox("added flavor");
+                        }
+                    }
+                    if (isWaiting)
                     {
-                        bool isWaiting = false;
-                        addTextToListBox("adding ingrediants to pie: " + pie.num);
-                        lock (fillingLock)
-                        {
-                            if (filling <= 0)
-                            {
-                                filling = 0;
-                                conveyerTimerStopHandle.Reset();
-                                isWaiting = true;
-                            }
-                            else
-                            {
-                                filling -= 250;
-                                System.Threading.Thread.Sleep(10);
-                                addTextToListBox("filling added to pie: " + pie.num);
-                            }
-                        }
-                        if (isWaiting)
-                        {
-                            lucyIngrWaitHandle.WaitOne();
-                            isWaiting = false;
-                        }
-                        lock (flavorLock)
-                        {
-                            if (flavor <= 0)
-                            {
-                                flavor = 0;
-                                conveyerTimerStopHandle.Reset();
-                                isWaiting = true;
-                            }
-                            else
-                            {
-                                flavor -= 10;
-                                System.Threading.Thread.Sleep(10);
-                                addTextToListBox("flavor to pie: " + pie.num );
-                            }
-                        }
-                        if (isWaiting)
-                        {
-                            lucyIngrWaitHandle.WaitOne();
-                            isWaiting = false;
-                        }
-                        lock (toppingLock)
-                        {
-                            if (topping <= 0)
-                            {
-                                topping = 0;
-                                conveyerTimerStopHandle.Reset();
-                                isWaiting = true;
-                            }
-                            else
-                            {
-                                topping -= 100;
-                                System.Threading.Thread.Sleep(10);
-                                addTextToListBox("toping added to pie: " + pie.num);
-                            }
-                        }
-                        if (isWaiting)
-                        {
-                            lucyIngrWaitHandle.WaitOne();
-                            isWaiting = false;
-                        }
-                        pie.isDone = true;
-                        addTextToListBox("pie: " + pie.num + " is done");
+                        lucyIngrWaitHandle.WaitOne();
+                        isWaiting = false;
                     }
+                    lock (toppingLock)
+                    {
+                        if (topping <= 0) {
+                            topping = 0;
+                            conveyerTimer.Stop();
+                            isWaiting = true;
+                        } else {
+                            topping -= 100;
+                            System.Threading.Thread.Sleep(100);
+                            addTextToListBox("added toping");
+                        }
+                    }
+                    if (isWaiting)
+                    {
+                        lucyIngrWaitHandle.WaitOne();
+                        isWaiting = false;
+                    }
+                    pie.IsDone = true;
                 }
             }
-            addTextToListBox("Lucy terminated");
-        }
-
-        private void JoeRobotWorker_DoWork()
-        {
-            while (true)
-            {
-                if (shouldStop)
-                {
-                    break;
-                }
-                lock (fillingLock)
-                {
-                    if (filling <= 100)
-                    {
-                        addTextToListBox("adding filling...");
-                        while (filling <= 1900)
-                        {
-                            filling += 100;
-                            System.Threading.Thread.Sleep(10);
-                        }
-                        lucyIngrWaitHandle.Set();
-                    }
-                }
-                lock (flavorLock)
-                {
-                    if (flavor <= 0 && flavor <= 1900)
-                    {
-                        while (flavor <= 1900)
-                        {
-                            flavor += 100;
-                            System.Threading.Thread.Sleep(10);
-                        }
-                        lucyIngrWaitHandle.Set();
-                    }
-                }
-                lock (toppingLock)
-                {
-                    if (topping <= 0 && topping <= 1900)
-                    {
-                        while (topping <= 1900)
-                        {
-                            topping += 100;
-                            System.Threading.Thread.Sleep(10);
-                        }
-                        lucyIngrWaitHandle.Set();
-                    }
-                }
-            }
-            addTextToListBox("Joe terminated");
-        }
-
-        private void bStart_Click(object sender, EventArgs e)
-        {
-            conveyerTimer = new System.Threading.Timer(conveyerTimer_Tick, null, 50, 50);
-            shouldStop = false;
-            Thread lucy = new Thread(LucyRobotWorker_DoWork);
-            Thread joe = new Thread(JoeRobotWorker_DoWork);
-            lucy.Start();
-            joe.Start();
-            conveyerTimerStopHandle.Set();
-            bStart.Enabled = false;
-            bStop.Enabled = true;
-        }
-
-        private void bStop_Click(object sender, EventArgs e)
-        {
-            conveyerTimer.Dispose();
-            shouldStop = true;
-            lucyPieWaitHandle.Set();
-            bStop.Enabled = false;
-            bStart.Enabled = true;
-            conveyerTimerStopHandle.Reset();
         }
 
         private void addTextToListBox(String text)
         {
-            Invoke((Action)(() => { listBoxOutLog.Items.Add(text);
-                                         listBoxOutLog.SelectedIndex = listBoxOutLog.Items.Count - 1;
-                                    }));
+            BeginInvoke((Action)(() => { listBoxOutLog.Items.Add(text); }));
         }
 
         private void updateValues()
         {
-            int fillingVal;
-            int toppingVal;
-            int flavorVal;
-            lock(fillingLock) {
-                fillingVal = filling;
-            }
-            lock (toppingLock) {
-                toppingVal = topping;
-            }
-            lock (flavorLock) {
-                flavorVal = flavor;
-            }
             BeginInvoke((Action)(() =>
             {
-                labelFillingVal.Text = fillingVal.ToString();
-
-                labelToppingVal.Text = toppingVal.ToString();
-
-                labelFlavorVal.Text = flavorVal.ToString();
+                lock(fillingLock) {
+                    labelFillingVal.Text = filling.ToString();
+                }
+                lock (toppingLock) {
+                    labelToppingVal.Text = topping.ToString();
+                }
+                lock (flavorLock) {
+                    labelFlavorVal.Text = flavor.ToString();
+                }
             }));
+        }
+
+        private void JoeRobotWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while (true) {
+                System.Threading.Thread.Sleep(10000);
+                filling = 2000;
+                conveyerTimer.Start();
+                lucyIngrWaitHandle.Set();
+            }
         }
     }
 }
