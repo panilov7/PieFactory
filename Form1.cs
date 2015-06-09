@@ -14,10 +14,14 @@ namespace PieFactory
     public partial class Form1 : Form
     {
         private int filling = 2000; // in grams
+        private int fillingPerPie = 250;
         private int flavor = 2000;
+        private int flavorPerPie = 10;
         private int topping = 2000;
+        private int toppingPerPie = 100;
         private int pieNum = 0;
         private bool shouldStop = false;
+        private int milisecOfJoeSleep = 10;
 
         private System.Threading.Timer conveyerTimer; 
 
@@ -78,7 +82,7 @@ namespace PieFactory
                             }
                             else
                             {
-                                filling -= 250;
+                                filling -= fillingPerPie;
                                 System.Threading.Thread.Sleep(10);
                                 addTextToListBox("filling added to pie: " + pie.num);
                             }
@@ -98,7 +102,7 @@ namespace PieFactory
                             }
                             else
                             {
-                                flavor -= 10;
+                                flavor -= flavorPerPie;
                                 System.Threading.Thread.Sleep(10);
                                 addTextToListBox("flavor to pie: " + pie.num );
                             }
@@ -118,7 +122,7 @@ namespace PieFactory
                             }
                             else
                             {
-                                topping -= 100;
+                                topping -= toppingPerPie;
                                 System.Threading.Thread.Sleep(10);
                                 addTextToListBox("toping added to pie: " + pie.num);
                             }
@@ -144,43 +148,120 @@ namespace PieFactory
                 {
                     break;
                 }
-                lock (fillingLock)
+                //if (filling > 1900 && topping > 1900 && flavor > 1900)
+                //{
+                //    System.Threading.Thread.Sleep(milisecOfJoeSleep);
+                //} else { everything else in the loop
+                if (filling / fillingPerPie <= topping / toppingPerPie &&
+                    filling / fillingPerPie <= flavor / flavorPerPie)
                 {
-                    if (filling <= 100)
+                    lock (fillingLock)
                     {
-                        addTextToListBox("adding filling...");
-                        while (filling <= 1900)
+                        if (filling <= 1900) // mai ne trqbva da e taka zashtoto joe pulni postoqnno, osven ako ne se spre a logikata tuk e razlichna
                         {
                             filling += 100;
-                            System.Threading.Thread.Sleep(10);
+                            System.Threading.Thread.Sleep(milisecOfJoeSleep);
+                            lucyIngrWaitHandle.Set();
                         }
-                        lucyIngrWaitHandle.Set();
-                    }
-                }
-                lock (flavorLock)
-                {
-                    if (flavor <= 0 && flavor <= 1900)
-                    {
-                        while (flavor <= 1900)
+                        else if (topping / toppingPerPie <= flavor / flavorPerPie)
                         {
-                            flavor += 100;
-                            System.Threading.Thread.Sleep(10);
+                            lock (toppingLock)
+                            {
+                                if (topping <= 1900) // mai ne trqbva da e taka zashtoto joe pulni postoqnno, osven ako ne se spre a logikata tuk e razlichna
+                                {
+                                    topping += 100;
+                                    System.Threading.Thread.Sleep(milisecOfJoeSleep);
+                                    lucyIngrWaitHandle.Set();
+                                }
+                                else
+                                {
+                                    lock (flavorLock)
+                                    {
+                                        if (flavor <= 1900) // mai ne trqbva da e taka zashtoto joe pulni postoqnno, osven ako ne se spre a logikata tuk e razlichna
+                                        {
+                                            flavor += 100;
+                                            System.Threading.Thread.Sleep(milisecOfJoeSleep);
+                                            lucyIngrWaitHandle.Set();
+                                        }
+                                    }
+                                }
+                            }
                         }
-                        lucyIngrWaitHandle.Set();
                     }
-                }
-                lock (toppingLock)
+                } else if(topping / toppingPerPie <= filling / fillingPerPie &&
+                          topping / toppingPerPie <= flavor / flavorPerPie)
                 {
-                    if (topping <= 0 && topping <= 1900)
+                    lock (toppingLock)
                     {
-                        while (topping <= 1900)
+                        if (topping <= 1900) // mai ne trqbva da e taka zashtoto joe pulni postoqnno, osven ako ne se spre a logikata tuk e razlichna
                         {
                             topping += 100;
-                            System.Threading.Thread.Sleep(10);
+                            System.Threading.Thread.Sleep(milisecOfJoeSleep);
+                            lucyIngrWaitHandle.Set();
                         }
-                        lucyIngrWaitHandle.Set();
+                        else
+                        {
+                            lock (flavorLock)
+                            {
+                                if (flavor <= 1900) // mai ne trqbva da e taka zashtoto joe pulni postoqnno, osven ako ne se spre a logikata tuk e razlichna
+                                {
+                                    flavor += 100;
+                                    System.Threading.Thread.Sleep(milisecOfJoeSleep);
+                                    lucyIngrWaitHandle.Set();
+                                }
+                            }
+                        }
+                    }
+                } else if(flavor / flavorPerPie <= topping/toppingPerPie &&
+                          flavor / flavorPerPie <= filling / fillingPerPie)
+                {
+                    lock (flavorLock)
+                    {
+                        if (flavor <= 1900) // mai ne trqbva da e taka zashtoto joe pulni postoqnno, osven ako ne se spre a logikata tuk e razlichna
+                        {
+                            flavor += 100;
+                            System.Threading.Thread.Sleep(milisecOfJoeSleep);
+                            lucyIngrWaitHandle.Set();
+                        }
                     }
                 }
+                //lock (fillingLock)
+                //{
+                //    if (filling <= 100)
+                //    {
+                //        addTextToListBox("adding filling...");
+                //        while (filling <= 1900)
+                //        {
+                //            filling += 100;
+                //            System.Threading.Thread.Sleep(10);
+                //        }
+                //        lucyIngrWaitHandle.Set();
+                //    }
+                //}
+                //lock (flavorLock)
+                //{
+                //    if (flavor <= 0 && flavor <= 1900) //??
+                //    {
+                //        while (flavor <= 1900)
+                //        {
+                //            flavor += 100;
+                //            System.Threading.Thread.Sleep(10);
+                //        }
+                //        lucyIngrWaitHandle.Set();
+                //    }
+                //}
+                //lock (toppingLock)
+                //{
+                //    if (topping <= 0 && topping <= 1900) //??
+                //    {
+                //        while (topping <= 1900)
+                //        {
+                //            topping += 100;
+                //            System.Threading.Thread.Sleep(10);
+                //        }
+                //        lucyIngrWaitHandle.Set();
+                //   }
+                // }
             }
             addTextToListBox("Joe terminated");
         }
