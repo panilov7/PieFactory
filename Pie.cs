@@ -8,7 +8,12 @@ namespace PieFactory
 {
     class Pie
     {
-        private bool isDone = false;
-        public bool IsDone { get; set; }
+        public bool isDone { get; set; }
+        public int num { get; set; }
+
+        public Pie(int num)
+        {
+            this.num = num;
+        }
     }
 }
